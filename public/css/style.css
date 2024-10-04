@@ -1,0 +1,424 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+main {
+    display: flex;
+    height: 100vh;
+}
+
+h2 {
+    font-weight: 600;
+}
+
+.side-bar {
+    width: 20%;
+    background: #fff;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s ease;
+}
+
+.side-bar h1 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    color: #444;
+}
+
+.side-bar hr {
+    margin: 10px 0;
+    border: 1px solid #e0e0e0;
+}
+
+ul {
+    list-style: none;
+    margin-top: 20px;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 10px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: left;
+}
+
+a {
+    text-decoration: none;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 15px;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+a:hover {
+    background: #4CAF50;
+    color: #fff;
+}
+
+a i {
+    margin-right: 8px;
+}
+
+.content {
+    width: 80%;
+    padding: 40px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    transition: padding 0.3s ease;
+}
+
+h2 {
+    margin-bottom: 15px;
+    font-size: 30px;
+    color: #333;
+    font-weight: 700;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+p {
+    line-height: 1.6;
+    color: #555;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    min-width: 300px;
+    max-width: 350px;
+    transition: box-shadow 0.3s ease;
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.card:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card h3 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.card p {
+    font-size: 16px;
+    color: #666;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 50%;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal-content.show {
+    transform: translateY(0);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#add-note-button,
+#add-document-button,
+#add-task-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#add-note-button:hover,
+#add-document-button:hover,
+#add-task-button:hover {
+    background-color: #45a049;
+}
+
+.note {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.note:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.note-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #444;
+}
+
+.delete-note,
+.edit-note {
+    position: absolute;
+    top: 10px;
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 12px;
+}
+
+.delete-note {
+    right: 10px;
+    background: #ff4d4d;
+}
+
+.edit-note {
+    right: 60px;
+    background: #4d94ff;
+}
+
+#note-input,
+#note-body,
+#document-input,
+#document-body {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: border-color 0.3s ease;
+}
+
+#note-input:focus,
+#note-body:focus,
+#document-input:focus,
+#document-body:focus {
+    border-color: #4CAF50;
+}
+
+/* Calendar styles */
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.day {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.day:hover {
+    background: #f0f0f0;
+}
+
+.event {
+    background: #4CAF50;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+footer {
+    background-color: #333;
+    padding: 20px;
+    text-align: center;
+    color: #fff;
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+footer a {
+    color: #4CAF50;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+.edit-button,
+.delete-button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.cat {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+    text-align: left;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------------------------------------------- */
+
+#main-tasks {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 20px;
+    flex-direction: row;
+    width: 100%;
+    gap: 20px;
+}
+
+#priorities {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 20px;
+    flex-direction: row;
+    width: 100%;
+    margin: 10px;
+}
+
+
+.prior {
+    width: 300px;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 200px;
+    max-height: fit-content;
+}
+
+.prior button {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    color: #ccc;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: color 0.3s ease;
+}
+
+.prior button:hover {
+    color: #333;
+}
+
+.low-tag {
+    background: #4caf4fa4;
+    padding: 2px;
+    border: #45a049 2px solid;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1b511e;
+}
+
+.mid-tag {
+    background: #ff9800a4;
+    padding: 3px;
+    border: #ff9800 2px solid;
+    border-radius: 5px;
+    font-size: 14px;font-weight: 600;
+    color: #5d3f00;
+}
+
+.high-tag {
+    background: #f44336a4;
+    padding: 3px;
+    border: #f44336 2px solid;
+    border-radius: 5px;
+    font-size: 14px;font-weight: 600;
+    color: #7f0000;
+}
+
+.task {
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.task:hover {
+    background: #f0f0f0;
+}
