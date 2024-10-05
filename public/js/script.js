@@ -1,260 +1,480 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const content = document.getElementById('content');
-    const notesSection = document.getElementById('notes-section');
-    const notesList = document.getElementById('notes-list');
-    const modal = document.getElementById("myModal");
-    const noteInput = document.getElementById("note-input");
-    const noteBody = document.getElementById("note-body");
-    let currentEditingIndex = null;
-    renderAllTasks();
-    // Centralized event listeners
-    document.body.addEventListener('click', handleButtonClick);
-
-    // Show the notes section and hide the home screen
-    document.getElementById('notes-button').addEventListener('click', () => {
-        showNotes();
-        renderNotes(); // Display saved notes
-        content.appendChild(notesSection);
+// Navigation
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(menuItem => menuItem.classList.remove('active'));
+        document.getElementById(this.dataset.section).classList.add('active');
+        this.classList.add('active');
     });
+});
 
-    if (localStorage.getItem('low-priorities') === null) {
-        localStorage.setItem('low-priorities', JSON.stringify([]));
-    }
+// Modals
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
 
-    if (localStorage.getItem('mid-priorities') === null) {
-        localStorage.setItem('mid-priorities', JSON.stringify([]));
-    }
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
 
-    if (localStorage.getItem('high-priorities') === null) {
-        localStorage.setItem('high-priorities', JSON.stringify([]));
-    }
-
-    // Show home screen
-    document.getElementById('home-button').addEventListener('click', showHome);
-
-    // Open modal for adding a new note
-    document.getElementById('add-note-button').addEventListener('click', openAddNoteModal);
-
-    // Close modal
-    document.getElementById("close-modal").addEventListener('click', () => {
-        modal.style.display = "none";
+document.querySelectorAll('.close').forEach(close => {
+    close.addEventListener('click', function () {
+        this.closest('.modal').style.display = 'none';
     });
+});
 
-    // Save note
-    document.getElementById("submit-note-button").addEventListener('click', saveNote);
+// Enhanced Notes Functionality
+let currentFolder = null;
+let currentNote = null;
+let autoSaveTimeout = null;
 
-    // Centralized button click handler (edit and delete)
-    function handleButtonClick(e) {
-        const target = e.target;
-        if (target.classList.contains('delete-note')) {
-            const index = target.dataset.index;
-            deleteNoteFromLocalStorage(index);
-            renderNotes();
-        } else if (target.classList.contains('edit-note')) {
-            currentEditingIndex = target.dataset.index;
-            openEditNoteModal(currentEditingIndex);
+function saveNotes() {
+    localStorage.setItem('schoolOrganizerNotes', JSON.stringify({
+        folders: folders,
+        notes: notes
+    }));
+}
+
+function loadNotes() {
+    const savedData = JSON.parse(localStorage.getItem('schoolOrganizerNotes'));
+    if (savedData) {
+        folders = savedData.folders || [];
+        notes = savedData.notes || [];
+    }
+}
+
+let folders = [];
+let notes = [];
+
+loadNotes();
+
+function renderFolders(parentFolder = null, level = 0) {
+    const folderList = parentFolder ? 
+        parentFolder.querySelector('.nested-items') : 
+        document.getElementById('folderList');
+    
+    if (!folderList) return;
+
+    folderList.innerHTML = '';
+    folders
+        .filter(folder => folder.parentId === (parentFolder ? parentFolder.dataset.folderId : null))
+        .forEach(folder => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="folder-header">
+                    <i class="fas fa-folder"></i>
+                    <span class="folder-name">${folder.name}</span>
+                </div>
+            `;
+            li.classList.add('folder-item');
+            li.dataset.folderId = folder.id;
+            li.style.paddingLeft = `${level * 20}px`;
+            
+            const folderHeader = li.querySelector('.folder-header');
+            folderHeader.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectFolder(folder);
+                toggleFolder(li);
+            });
+            folderHeader.addEventListener('contextmenu', (e) => showContextMenu(e, folder));
+            
+            const nestedItems = document.createElement('ul');
+            nestedItems.classList.add('nested-items');
+            li.appendChild(nestedItems);
+            
+            folderList.appendChild(li);
+            renderFolders(li, level + 1);
+            renderNotes(folder, li);
+        });
+}
+
+function renderNotes(folder, folderElement) {
+    const noteList = document.createElement('ul');
+    noteList.classList.add('note-list');
+    folderElement.appendChild(noteList);
+
+    notes.filter(note => note.folderId === folder.id).forEach(note => {
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="fas fa-file-alt"></i> ${note.title}`;
+        li.classList.add('note-item');
+        li.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectNote(note);
+        });
+        li.addEventListener('contextmenu', (e) => showContextMenu(e, note));
+        noteList.appendChild(li);
+    });
+}
+
+function toggleFolder(folderElement) {
+    folderElement.classList.toggle('open');
+    const nestedItems = folderElement.querySelector('.nested-items');
+    const noteList = folderElement.querySelector('.note-list');
+    if (nestedItems) {
+        nestedItems.style.maxHeight = folderElement.classList.contains('open') ? 
+            `${nestedItems.scrollHeight}px` : '0';
+    }
+    if (noteList) {
+        noteList.style.maxHeight = folderElement.classList.contains('open') ? 
+            `${noteList.scrollHeight}px` : '0';
+    }
+}
+
+function selectFolder(folder) {
+    currentFolder = folder;
+    document.querySelectorAll('.folder-item').forEach(item => item.classList.remove('active'));
+    document.querySelector(`[data-folder-id="${folder.id}"]`).classList.add('active');
+}
+
+function selectNote(note) {
+    currentNote = note;
+    document.getElementById('noteTitle').value = note.title;
+    document.getElementById('noteContent').innerHTML = note.content;
+    
+    // Set up auto-save for title
+    document.getElementById('noteTitle').addEventListener('input', autoSave);
+    
+    // Set up auto-save for content
+    document.getElementById('noteContent').addEventListener('input', autoSave);
+}
+
+function autoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+        if (currentNote) {
+            currentNote.title = document.getElementById('noteTitle').value;
+            currentNote.content = document.getElementById('noteContent').innerHTML;
+            saveNotes();
+            const folderElement = document.querySelector(`[data-folder-id="${currentNote.folderId}"]`);
+            renderNotes(currentFolder, folderElement);
         }
-    }
+    }, 1000); // Auto-save after 1 second of inactivity
+}
 
-    // Open the modal for editing an existing note
-    function openEditNoteModal(index) {
-        const notes = getNotesFromLocalStorage();
-        noteInput.value = notes[index].title;
-        noteBody.value = notes[index].body;
-        document.getElementById("modal-title").textContent = "Edit Note";
-        modal.style.display = "block";
-    }
+function showContextMenu(e, item) {
+    e.preventDefault();
+    const contextMenu = document.getElementById('contextMenu');
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = `${e.pageX}px`;
+    contextMenu.style.top = `${e.pageY}px`;
 
-    // Open the modal for adding a new note
-    function openAddNoteModal() {
-        currentEditingIndex = null;
-        noteInput.value = '';
-        noteBody.value = '';
-        document.getElementById("modal-title").textContent = "Add a New Note";
-        modal.style.display = "block";
-    }
+    document.getElementById('renameItem').onclick = () => renameItem(item);
+    document.getElementById('deleteItem').onclick = () => deleteItem(item);
+}
 
-    // Save note (either add or edit)
-    function saveNote() {
-        const titleText = noteInput.value.trim();
-        const bodyText = noteBody.value.trim();
-
-        if (titleText && bodyText) {
-            if (currentEditingIndex !== null) {
-                editNoteInLocalStorage(currentEditingIndex, titleText, bodyText);
-            } else {
-                addNoteToLocalStorage(titleText, bodyText);
-            }
-            noteInput.value = '';
-            noteBody.value = '';
-            modal.style.display = "none";
-            renderNotes();
+function renameItem(item) {
+    const newName = prompt('Enter new name:', item.name || item.title);
+    if (newName) {
+        if (item.name) {
+            item.name = newName;
         } else {
-            alert("Please fill in both fields.");
+            item.title = newName;
+        }
+        saveNotes();
+        renderFolders();
+        if (currentFolder) renderNotes(currentFolder, document.querySelector(`[data-folder-id="${currentFolder.id}"]`));
+    }
+}
+
+function deleteItem(item) {
+    if (confirm('Are you sure you want to delete this item?')) {
+        if (item.name) {
+            folders = folders.filter(f => f.id !== item.id);
+            notes = notes.filter(n => n.folderId !== item.id);
+        } else {
+            notes = notes.filter(n => n.id !== item.id);
+        }
+        saveNotes();
+        renderFolders();
+        if (currentFolder) renderNotes(currentFolder, document.querySelector(`[data-folder-id="${currentFolder.id}"]`));
+        if (currentNote && currentNote.id === item.id) {
+            currentNote = null;
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteContent').innerHTML = '';
         }
     }
+}
 
-    // Fetch notes from localStorage
-    function getNotesFromLocalStorage() {
-        return JSON.parse(localStorage.getItem('notes')) || [];
+// Update addFolder function to support nested folders
+function addFolder() {
+    const folderName = prompt('Enter folder name:');
+    if (folderName) {
+        const newFolder = { 
+            id: Date.now(), 
+            name: folderName, 
+            parentId: currentFolder ? currentFolder.id : null 
+        };
+        folders.push(newFolder);
+        saveNotes();
+        renderFolders();
     }
+}
 
-    // Add note to localStorage
-    function addNoteToLocalStorage(title, body) {
-        const notes = getNotesFromLocalStorage();
-        notes.push({ title, body });
-        localStorage.setItem('notes', JSON.stringify(notes));
+// Update event listener for adding folders
+document.getElementById('addFolderBtn').addEventListener('click', addFolder);
+
+// Update addNote function
+function addNote() {
+    if (currentFolder) {
+        const noteTitle = prompt('Enter note title:');
+        if (noteTitle) {
+            const newNote = { id: Date.now(), title: noteTitle, content: '', folderId: currentFolder.id };
+            notes.push(newNote);
+            saveNotes();
+            const folderElement = document.querySelector(`[data-folder-id="${currentFolder.id}"]`);
+            renderNotes(currentFolder, folderElement);
+            selectNote(newNote);
+        }
+    } else {
+        alert('Please select a folder first.');
     }
+}
 
-    // Edit note in localStorage
-    function editNoteInLocalStorage(index, title, body) {
-        const notes = getNotesFromLocalStorage();
-        notes[index] = { title, body };
-        localStorage.setItem('notes', JSON.stringify(notes));
-    }
+// Update event listener for adding notes
+document.getElementById('addNoteBtn').addEventListener('click', addNote);
 
-    // Delete note from localStorage
-    function deleteNoteFromLocalStorage(index) {
-        const notes = getNotesFromLocalStorage();
-        notes.splice(index, 1);
-        localStorage.setItem('notes', JSON.stringify(notes));
-    }
 
-    // Render notes from localStorage
-    function renderNotes() {
-        const notes = getNotesFromLocalStorage();
-        const fragment = document.createDocumentFragment(); // Use a fragment for better performance
-        notesList.innerHTML = ''; // Clear the current list
+document.getElementById('boldBtn').addEventListener('click', () => {
+    document.execCommand('bold', false, null);
+});
 
-        notes.forEach((note, index) => {
-            const noteDiv = createNoteElement(note, index);
-            fragment.appendChild(noteDiv);
-        });
+document.getElementById('italicBtn').addEventListener('click', () => {
+    document.execCommand('italic', false, null);
+});
 
-        notesList.appendChild(fragment); // Append all elements at once
-    }
+// Close context menu when clicking outside
+document.addEventListener('click', () => {
+    document.getElementById('contextMenu').style.display = 'none';
+});
 
-    // Create a note DOM element
-    function createNoteElement(note, index) {
-        const noteDiv = document.createElement('div');
-        noteDiv.classList.add('note');
-        noteDiv.innerHTML = `
-            <div class="note-title">${note.title}</div>
-            <div>${note.body}</div>
-            <button class="edit-note" data-index="${index}">Edit</button>
-            <button class="delete-note" data-index="${index}">Delete</button>
+renderFolders();
+
+// Enhanced Todo List Functionality
+let todos = JSON.parse(localStorage.getItem('todos')) || [];
+
+function renderTodos() {
+    const todoList = document.getElementById('todoList');
+    todoList.innerHTML = '';
+    todos.forEach((todo, index) => {
+        const li = document.createElement('li');
+        li.className = `todo-item priority-${todo.priority}`;
+        li.innerHTML = `
+            <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}>
+            <span class="todo-text">${todo.text}</span>
+            <select class="todo-priority">
+                <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>Low</option>
+                <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>High</option>
+            </select>
+            <span class="todo-delete"><i class="fas fa-trash"></i></span>
         `;
-        return noteDiv;
-    }
+        li.querySelector('.todo-checkbox').addEventListener('change', () => toggleTodo(index));
+        li.querySelector('.todo-priority').addEventListener('change', (e) => changePriority(index, e.target.value));
+        li.querySelector('.todo-delete').addEventListener('click', () => deleteTodo(index));
+        todoList.appendChild(li);
+    });
+}
 
-    // Section visibility functions
-    function showDocuments() {
-        setSectionVisibility("documents-section");
-    }
+function addTodo(text, priority = 'medium') {
+    todos.push({ text, completed: false, priority });
+    saveTodos();
+    renderTodos();
+}
 
-    function showNotes() {
-        setSectionVisibility("notes-section");
-    }
+function toggleTodo(index) {
+    todos[index].completed = !todos[index].completed;
+    saveTodos();
+    renderTodos();
+}
 
-    function showHome() {
-        setSectionVisibility("home");
-    }
+function changePriority(index, priority) {
+    todos[index].priority = priority;
+    saveTodos();
+    renderTodos();
+}
 
-    function showTask() {
-        setSectionVisibility("task-section");
-    }
+function deleteTodo(index) {
+    todos.splice(index, 1);
+    saveTodos();
+    renderTodos();
+}
 
-    function showReading() {
-        setSectionVisibility("reading-section");
-    }
+function saveTodos() {
+    localStorage.setItem('todos', JSON.stringify(todos));
+}
 
-    function showCalendar() {
-        setSectionVisibility("calendar-section");
-    }
-
-    document.getElementById('calendar-button').addEventListener('click', showCalendar);
-    document.getElementById('reading-button').addEventListener('click', showReading);
-    document.getElementById('task-button').addEventListener('click', showTask);
-    document.getElementById('documents-button').addEventListener('click', showDocuments);
-
-    // Helper to set the visibility of sections
-    function setSectionVisibility(visibleSectionId) {
-        ['documents-section', 'notes-section', 'home', 'task-section', 'reading-section', 'calendar-section'].forEach(sectionId => {
-            document.getElementById(sectionId).style.display = sectionId === visibleSectionId ? "block" : "none";
-        });
+document.getElementById('addTaskBtn').addEventListener('click', () => {
+    const newTaskInput = document.getElementById('newTask');
+    const text = newTaskInput.value.trim();
+    const priority = document.getElementById('newTaskPriority').value;
+    if (text) {
+        addTodo(text, priority);
+        newTaskInput.value = '';
     }
 });
 
-function addTask(priority) {
-    var taskName = prompt("Enter task name");
-    if (taskName) {
-        let task = createTaskElement(taskName, priority);
-
-        document.getElementById(`${priority}-priorities-tasks`).appendChild(task);
-        updateLocalStorage(priority, taskName);
-
-        renderNumberOfTasks();
+document.getElementById('newTask').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('addTaskBtn').click();
     }
-}
+});
 
-function createTaskElement(taskName, priority) {
-    let task = document.createElement("div");
-    task.classList.add("task");
-    task.innerHTML = `<p>${taskName}</p>`;
+renderTodos();
 
-    task.onclick = function () {
-        removeTaskFromLocalStorage(priority, taskName);
-        document.getElementById(`${priority}-priorities-tasks`).removeChild(task);
-        renderNumberOfTasks();
-    };
+// Document section code
+function initializeDocumentSection() {
+    const addDocumentBtn = document.querySelector('.add-document');
+    const documentModal = document.getElementById('documentModal');
+    const viewDocumentModal = document.getElementById('viewDocumentModal');
+    const closeModalBtns = document.querySelectorAll('.modal .close');
+    const saveDocumentBtn = document.getElementById('saveDocumentBtn');
+    const documentGrid = document.querySelector('.document-grid');
 
-    return task;
-}
+    let documents = []; // Array to store documents
 
-function updateLocalStorage(priority, taskName) {
-    let tasks = getTasksFromLocalStorage(priority);
-    tasks.push(taskName);
-    localStorage.setItem(`${priority}-priorities`, JSON.stringify(tasks));
-}
+    if (addDocumentBtn) {
+        addDocumentBtn.addEventListener('click', () => {
+            documentModal.style.display = 'block';
+        });
+    }
 
-function removeTaskFromLocalStorage(priority, taskName) {
-    let tasks = getTasksFromLocalStorage(priority);
-    tasks.splice(tasks.indexOf(taskName), 1);
-    localStorage.setItem(`${priority}-priorities`, JSON.stringify(tasks));
-}
-
-function getTasksFromLocalStorage(priority) {
-    return JSON.parse(localStorage.getItem(`${priority}-priorities`)) || [];
-}
-
-function renderAllTasks() {
-    ['low', 'mid', 'high'].forEach(priority => {
-        let tasks = getTasksFromLocalStorage(priority);
-        tasks.forEach(taskName => {
-            let taskElement = createTaskElement(taskName, priority);
-            document.getElementById(`${priority}-priorities-tasks`).appendChild(taskElement);
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            documentModal.style.display = 'none';
+            viewDocumentModal.style.display = 'none';
         });
     });
 
-    renderNumberOfTasks();
-}
+    if (saveDocumentBtn) {
+        saveDocumentBtn.addEventListener('click', () => {
+            const title = document.getElementById('documentTitle').value;
+            const body = document.getElementById('documentBody').value;
+            if (title && body) {
+                const newDocument = { title, body, lastEdited: new Date() };
+                documents.push(newDocument);
+                addDocumentCard(newDocument);
+                
+                // Close the modal and reset fields
+                documentModal.style.display = 'none';
+                document.getElementById('documentTitle').value = '';
+                document.getElementById('documentBody').value = '';
+            }
+        });
+    }
 
-function renderNumberOfTasks() {
-    ['low', 'mid', 'high'].forEach(priority => {
-        let tasks = getTasksFromLocalStorage(priority);
-        document.getElementById(`number-of-${priority}-priorities`).innerHTML = tasks.length;
+    function addDocumentCard(doc) {  // Changed 'document' to 'doc'
+        const newCard = document.createElement('div');
+        newCard.className = 'document-card';
+        newCard.innerHTML = `
+            <i class="fas fa-file-alt"></i>
+            <h3>${doc.title}</h3>
+            <p>Last edited: ${formatDate(doc.lastEdited)}</p>
+        `;
+        newCard.addEventListener('click', () => viewDocument(doc));
+        
+        if (documentGrid) {
+            documentGrid.insertBefore(newCard, addDocumentBtn.nextSibling);
+        }
+    }
+
+    function viewDocument(doc) {  // Changed 'document' to 'doc'
+        const viewDocumentTitle = document.getElementById('viewDocumentTitle');
+        const viewDocumentBody = document.getElementById('viewDocumentBody');
+        
+        viewDocumentTitle.textContent = doc.title;
+        viewDocumentBody.innerHTML = doc.body;
+        
+        viewDocumentModal.style.display = 'block';
+    }
+
+    function formatDate(date) {
+        const now = new Date();
+        const diff = now - date;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (days === 0) return 'Today';
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return `${days} days ago`;
+        return date.toLocaleDateString();
+    }
+
+    // Close the modals if clicking outside of them
+    window.addEventListener('click', (event) => {
+        if (event.target == documentModal || event.target == viewDocumentModal) {
+            documentModal.style.display = 'none';
+            viewDocumentModal.style.display = 'none';
+        }
     });
+
 }
 
-// Add functions for each priority type to call the general addTask function
-function addLowPriority() {
-    addTask('low');
+// Call the function to initialize the document section
+document.addEventListener('DOMContentLoaded', initializeDocumentSection);
+
+// Add these functions to your existing script.js file
+
+function updateHomeDashboard() {
+    updateUpcomingTasks();
+    updateUpcomingEvents();
 }
 
-function addMidPriority() {
-    addTask('mid');
+function updateUpcomingTasks() {
+    const upcomingTasksList = document.getElementById('upcomingTasks');
+    upcomingTasksList.innerHTML = '';
+
+    // Assuming you have a global tasks array
+    const tasks = getTasks(); // You'll need to implement this function to get tasks from your storage
+    const sortedTasks = tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    const upcomingTasks = sortedTasks.slice(0, 5); // Get the 5 most urgent tasks
+
+    upcomingTasks.forEach(task => {
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="fas fa-tasks"></i> ${task.title} - Due: ${formatDate(task.dueDate)}`;
+        upcomingTasksList.appendChild(li);
+    });
+
+    if (upcomingTasks.length === 0) {
+        upcomingTasksList.innerHTML = '<li>No upcoming tasks</li>';
+    }
 }
 
-function addHighPriority() {
-    addTask('high');
+function updateUpcomingEvents() {
+    const upcomingEventsList = document.getElementById('upcomingEvents');
+    upcomingEventsList.innerHTML = '';
+
+    // Assuming you have a global events array
+    const events = getEvents(); // You'll need to implement this function to get events from your storage
+    const sortedEvents = events.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const upcomingEvents = sortedEvents.filter(event => new Date(event.date) >= new Date()).slice(0, 5);
+
+    upcomingEvents.forEach(event => {
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="fas fa-calendar"></i> ${event.title} - ${formatDate(event.date)}`;
+        upcomingEventsList.appendChild(li);
+    });
+
+    if (upcomingEvents.length === 0) {
+        upcomingEventsList.innerHTML = '<li>No upcoming events</li>';
+    }
+}
+
+function formatDate(dateString) {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+}
+
+// Call this function when the page loads and whenever tasks or events are updated
+document.addEventListener('DOMContentLoaded', updateHomeDashboard);
+
+// You'll need to call updateHomeDashboard() whenever tasks or events are added, edited, or deleted
+
+function getTasks() {
+    const tasksJSON = localStorage.getItem('tasks');
+    return tasksJSON ? JSON.parse(tasksJSON) : [];
+}
+
+function getEvents() {
+    const eventsJSON = localStorage.getItem('events');
+    return eventsJSON ? JSON.parse(eventsJSON) : [];
 }

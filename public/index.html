@@ -4,165 +4,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Organizer</title>
+    <title>Enhanced School Organizer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/style.main.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 </head>
 
 <body>
-    <main>
-        <div class="side-bar">
-            <h1>School Organizer</h1>
+    <div class="container">
+        <aside class="sidebar">
+            <h1 style="color: white;"><i class="fas fa-graduation-cap"></i> School Organizer</h1>
             <hr>
-            <ul>
-                <p class="cat">Main</p>
-                <li><a href="#" id="home-button"><i class="fas fa-home"></i> Home</a></li>
-                <li><a href="#" id="notes-button"><i class="fas fa-sticky-note"></i> Notes</a></li>
-                <li><a href="#" id="documents-button"><i class="fas fa-file"></i> Documents</a></li>
-
-                <p class="cat">Private</p>
-                <li><a href="#" id="reading-button"><i class="fas fa-book"></i> Reading Lists</a></li>
-                <li><a href="#" id="task-button"><i class="fas fa-tasks"></i> Tasks</a></li>
-                <li><a href="#" id="calendar-button"><i class="fas fa-calendar-alt"></i> Calender</a></li>
-            </ul>
-        </div>
-
-        <div class="content" id="content">
-            <div class="home" id="home">
-                <h2 id="welcome-message">Welcome to Your Organizer</h2>
-            </div>
-            <div id="notes-section" style="display: none;">
-                <h2>Your Notes</h2>
-                <button id="add-note-button" style="margin-bottom: 15px;">Add Note</button>
-                <div id="notes-list"></div>
-            </div>
-
-            <div id="documents-section" style="display: none;">
-                <h2>Your Documents</h2>
-                <button id="add-document-button" style="margin-bottom: 15px;">Add Document</button>
-                <div id="documents-list"></div>
-            </div>
-
-            <div id="task-section" style="display: none;">
-                <h2><i class="fas fa-tasks"></i> Your TO DO List</h2>
-
-                <h3>To Do</h3>
-                <div id="main-tasks">
-                    <div id="priorities">
-                        <div class="prior low">
-                            <span class="low-tag">Low Priority: <span id="number-of-low-priorities"></span></span>
-                            <div id="low-priorities-tasks">
-                                
-                            </div>
-                            <button onclick="addLowPriority()"><i class="fas fa-plus"></i> New</button>
-                        </div>
-                        <div class="prior mid">
-                            <span class="mid-tag">Medium Priority: <span id="number-of-mid-priorities"></span></span>
-                            <div id="mid-priorities-tasks">
-
-                            </div>
-                            <button onclick="addMidPriority()"><i class="fas fa-plus"></i> New</button>
-                        </div>
-                        <div class="prior high">
-                            <span class="high-tag">High Priority: <span id="number-of-high-priorities"></span></span>
-                            <div id="high-priorities-tasks">
-
-                            </div>
-                            <button onclick="addHighPriority()"><i class="fas fa-plus"></i> New</button>
-                        </div>
+            <nav>
+                <div class="menu-category">
+                    <h2>Main</h2>
+                    <a href="#" class="menu-item active" data-section="home"><i class="fas fa-home"></i> Home</a>
+                    <a href="#" class="menu-item" data-section="notes"><i class="fas fa-sticky-note"></i> Notes</a>
+                    <a href="#" class="menu-item" data-section="documents"><i class="fas fa-file-alt"></i> Documents</a>
+                </div>
+                <div class="menu-category">
+                    <h2>Private</h2>
+                    <a href="#" class="menu-item" data-section="tasks"><i class="fas fa-tasks"></i> Tasks</a>
+                    <a href="#" class="menu-item" data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</a>
+                    <!-- Add this new menu item -->
+                    <a href="#" class="menu-item" data-section="kanban"><i class="fas fa-columns"></i> Kanban Board</a>
+                </div>
+            </nav>
+        </aside>
+        <main class="content">
+            <section id="home" class="section active">
+                <h1>Welcome to Your School Organizer</h1>
+                <div class="home-dashboard">
+                    <div class="dashboard-column">
+                        <h2>Upcoming Tasks</h2>
+                        <ul id="upcomingTasks"></ul>
+                    </div>
+                    <div class="dashboard-column">
+                        <h2>Upcoming Events</h2>
+                        <ul id="upcomingEvents"></ul>
                     </div>
                 </div>
-            </div>
-
-            <div id="reading-section" style="display: none;">
-                <h2><i class="fas fa-book"></i> Your Reading List</h2>
-                <div class="tabs">
-                    <input type="radio" class="tabs__radio" name="tabs" id="tab-1" checked>
-                    <label for="tab-1" class="tabs__label"><i class="fas fa-book"></i> Bookshelves</label>
-                    <div class="tab__content">
-                        <input type="search" id="search-bar" placeholder="Search for books...">
-                        <div id="book-list"></div>
+            </section>
+            <section id="notes" class="section">
+                <h1>Your Notes</h1>
+                <div class="notes-container">
+                    <div class="notes-sidebar">
+                        <button id="addFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
+                        <button id="addNoteBtn"><i class="fas fa-plus"></i> New Note</button>
+                        <ul class="folder-list" id="folderList"></ul>
                     </div>
-                    <input type="radio" class="tabs__radio" name="tabs" id="tab-2">
-                    <label for="tab-2" class="tabs__label"><i class="fas fa-book-open"></i> Reading Lists</label>
-                    <div class="tab__content">
-                        <div id="reading-list"></div>
-                    </div>
-            
-                    <input type="radio" class="tabs__radio" name="tabs" id="tab-3">
-                    <label for="tab-3" class="tabs__label"><i class="fas fa-check"></i> Completed</label>
-                    <div class="tab__content">
-                        <div id="completed-books"></div>
+                    <div class="notes-content">
+                        <input type="text" id="noteTitle" placeholder="Note Title">
+                        <div class="formatting-toolbar">
+                            <button id="boldBtn" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button id="italicBtn" title="Italic"><i class="fas fa-italic"></i></button>
+                        </div>
+                        <div id="noteContent" class="note-editor" contenteditable="true"></div>
                     </div>
                 </div>
-            </div>
-
-
-            <div id="calendar-section" style="display: none;">
-                <h2><i class="fas fa-calendar-alt"></i> Your Calender</h2>
-                <div class="main-two">
-                    <div id="calendar">
-                        <div class="header">
-                            <button id="prevBtn">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <div class="monthYear" id="monthYear"></div>
-                            <button id="nextBtn">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div class="days">
-                            <div class="day">Sun</div>
-                            <div class="day">Mon</div>
-                            <div class="day">Tue</div>
-                            <div class="day">Wen</div>
-                            <div class="day">Thru</div>
-                            <div class="day">Fri</div>
-                            <div class="day">Sat</div>
-                        </div>
-                        <div class="dates" id="dates"></div>
-                    </div>
-
-                    <div class="right-s">
-                        <h3>Events</h3>
-                        <p id="dat"></p>
-                        <div id="events"></div>
-                        <div id="addEvent">
-                            <input type="text" id="eventInput" placeholder="Add Event">
-                            <button id="addEventBtn">Add</button>
-                        </div>
+            </section>
+            <section id="documents" class="section">
+                <h1>Your Documents</h1>
+                <div class="document-grid">
+                    <div class="document-card add-document">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New Document</span>
                     </div>
                 </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- The Modal for Notes -->
-    <div id="myModal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="close-modal">&times;</span>
-            <h2 id="modal-title">Add a New Note</h2>
-            <input type="text" id="note-input" placeholder="Enter note title..." style="margin-bottom: 10px;">
-            <textarea id="note-body" placeholder="Enter your notes here..." rows="7"></textarea>
-            <button id="submit-note-button" style="padding: 10px;">Save Note</button>
-        </div>
+            </section>
+            <section id="tasks" class="section">
+                <h1>Your TO DO List</h1>
+                <div class="todo-list">
+                    <div class="todo-header">
+                        <input type="text" id="newTask" placeholder="Add a new task...">
+                        <select id="newTaskPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                        <button id="addTaskBtn"><i class="fas fa-plus"></i> Add Task</button>
+                    </div>
+                    <ul id="todoList"></ul>
+                </div>
+            </section>
+            <section id="calendar" class="section">
+                <h1>Your Calendar</h1>
+                <div class="calendar-container">
+                    <div class="calendar-left">
+                        <div class="calendar-header">
+                            <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                            <span id="currentMonth">October 2023</span>
+                            <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="calendar" id="calendarDays"></div>
+                    </div>
+                    <div class="calendar-right">
+                        <h2>Events</h2>
+                        <button id="addEventBtn"><i class="fas fa-plus"></i> Add Event</button>
+                        <ul id="eventsList"></ul>
+                    </div>
+                </div>
+            </section>
+            <!-- Add this new section for the Kanban board -->
+            <section id="kanban" class="section">
+                <h1>Kanban Board</h1>
+                <div class="kanban-board">
+                    <div class="kanban-column" id="todo">
+                        <h2>To Do</h2>
+                        <div class="kanban-column-content"></div>
+                        <button class="add-task-btn" data-column="todo">Add Task</button>
+                    </div>
+                    <div class="kanban-column" id="in-progress">
+                        <h2>In Progress</h2>
+                        <div class="kanban-column-content"></div>
+                        <button class="add-task-btn" data-column="in-progress">Add Task</button>
+                    </div>
+                    <div class="kanban-column" id="completed">
+                        <h2>Completed</h2>
+                        <div class="kanban-column-content"></div>
+                        <button class="add-task-btn" data-column="completed">Add Task</button>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- The Modal for Documents -->
+    <!-- Updated modal -->
     <div id="documentModal" class="modal">
         <div class="modal-content">
-            <span class="close" id="close-document-modal">&times;</span>
-            <h2 id="document-modal-title">Add a New Document</h2>
-            <input type="text" id="document-input" placeholder="Enter document title..." style="margin-bottom: 10px;">
-            <textarea id="document-body" placeholder="Enter your document here..." rows="10"></textarea>
-            <button id="submit-document-button" style="padding: 10px;">Save Document</button>
+            <span class="close">&times;</span>
+            <h2>Create a New Document</h2>
+            <input type="text" id="documentTitle" placeholder="Document Title">
+            <textarea id="documentBody" placeholder="Start writing your document..."></textarea>
+            <button id="saveDocumentBtn"><i class="fas fa-save"></i> Save Document</button>
         </div>
     </div>
 
-    <script src="js/read.js"></script>
-    <script src="js/quil.js"></script>
+    <!-- Add this modal for viewing documents -->
+    <div id="viewDocumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="viewDocumentTitle"></h2>
+            <div id="viewDocumentBody"></div>
+        </div>
+    </div>
+
+    <!-- Add this modal for adding/editing tasks -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="taskModalTitle">Add New Task</h2>
+            <input type="text" id="taskTitle" placeholder="Task Title">
+            <textarea id="taskDescription" placeholder="Task Description"></textarea>
+            <button id="saveTaskBtn">Save Task</button>
+        </div>
+    </div>
+
+    <div class="context-menu" id="contextMenu">
+        <ul>
+            <li id="renameItem">Rename</li>
+            <li id="deleteItem">Delete</li>
+        </ul>
+    </div>
+
     <script src="js/script.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/kanban.js"></script>
 </body>
 
 </html>
